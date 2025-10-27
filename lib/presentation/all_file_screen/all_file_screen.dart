@@ -791,7 +791,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
         body: RefreshIndicator(
           onRefresh: () => _loadAllFiles(forceRefresh: true),
           child: ListView.builder(
-            padding: EdgeInsets.fromLTRB(0, 1.h, 0, 10.h),
+            padding: EdgeInsets.fromLTRB(0, 0.5.h, 0, 10.h),
             itemCount: _filteredFiles.length,
             itemBuilder: (context, index) {
               final document = _filteredFiles[index];

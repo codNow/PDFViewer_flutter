@@ -336,7 +336,7 @@ class RecentScreenState extends State<RecentScreen> {
     return RefreshIndicator(
       onRefresh: _loadRecentFiles,
       child: ListView.builder(
-        padding: EdgeInsets.symmetric(vertical: 2.w),
+        padding: EdgeInsets.symmetric(vertical: 1.w),
         itemCount: filteredDocuments.length,
         itemBuilder: (context, index) {
           final document = filteredDocuments[index];

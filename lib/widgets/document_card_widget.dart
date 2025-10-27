@@ -57,7 +57,7 @@ class DocumentCardWidget extends StatelessWidget {
       onLongPress: onLongPress,
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
-        margin: EdgeInsets.fromLTRB(5.w, 0.w, 5.w, 2.w),
+        margin: EdgeInsets.fromLTRB(5.w, 1.w, 5.w, 1.w),
         padding: EdgeInsets.fromLTRB(2.w, 1.5.w, 2.w, 1.w),
         decoration: BoxDecoration(
           color: isSelected

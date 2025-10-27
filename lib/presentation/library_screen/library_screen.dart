@@ -531,7 +531,7 @@ class LibraryScreenState extends State<LibraryScreen> {
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView.builder(
-        padding: EdgeInsets.fromLTRB(0, 1.h, 0, 10.h),
+        padding: EdgeInsets.fromLTRB(0, 0.h, 0, 10.h),
         itemCount: currentList.length,
         itemBuilder: (context, index) {
           final document = currentList[index];
