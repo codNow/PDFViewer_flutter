@@ -41,8 +41,8 @@ class DocumentCardWidget extends StatelessWidget {
         ? '/${segments[0]}'
         : '';
     if (segments.isNotEmpty) {
-  segments.removeLast();
-}
+      segments.removeLast();
+    }
 
 // Get the last two folder names
     final lastThirdPath = segments.length >= 2 
@@ -58,7 +58,7 @@ class DocumentCardWidget extends StatelessWidget {
       child: AnimatedContainer(
         duration: Duration(milliseconds: 200),
         margin: EdgeInsets.fromLTRB(5.w, 1.w, 5.w, 1.w),
-        padding: EdgeInsets.fromLTRB(2.w, 1.5.w, 2.w, 1.w),
+        padding: EdgeInsets.fromLTRB(2.w, 1.5.w, 0.w, 1.w),
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.05)
@@ -139,29 +139,27 @@ class DocumentCardWidget extends StatelessWidget {
                       Row(
                         children: [
                           Flexible(
-                            child: Container(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CustomIconWidget(
-                                    iconName: 'folder_open',
-                                    size: 14,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                  SizedBox(width: 1.w),
-                                  Flexible(
-                                    child: Text(
-                                      lastSecondPath,
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                        color: theme.colorScheme.onSurfaceVariant,
-                                        fontSize: 12,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CustomIconWidget(
+                                  iconName: 'folder_open',
+                                  size: 14,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                SizedBox(width: 1.w),
+                                Flexible(
+                                  child: Text(
+                                    lastSecondPath,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontSize: 12,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ],
-                              )
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -208,12 +206,16 @@ class DocumentCardWidget extends StatelessWidget {
                                     )
                                   : null,
                             )
-                          : CustomIconWidget(
-                              key: ValueKey('more'),
-                              iconName: 'more_vert',
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              size: 4.w,
-                            ),
+                          : SizedBox(
+                            height: 7.w,
+                            width: 7.w,
+                            child: CustomIconWidget(
+                                key: ValueKey('more'),
+                                iconName: 'more_vert',
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                size: 5.w,
+                              ),
+                          ),
                     ),
                   ),
                 ),

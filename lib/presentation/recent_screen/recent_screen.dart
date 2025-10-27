@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfviewer/models/document_file.dart';
+import 'package:pdfviewer/presentation/dashboard_screen/widgets/asset_icon_widget.dart';
 import 'package:pdfviewer/widgets/document_card_widget.dart';
 import 'package:pdfviewer/services/storage_service.dart';
 import 'package:pdfviewer/widgets/custom_icon_widget.dart';
@@ -349,106 +350,27 @@ class RecentScreenState extends State<RecentScreen> {
               widget.onFileOpen(document);
             },
             onLongPress: () => _showDocumentOptions(document),
-            onOptionTap: () => _showQuickActions(document),
+            onOptionTap: () => _showDocumentOptions(document),
           );
         },
       ),
     );
   }
 
-  void _showQuickActions(DocumentFile document) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isFavorite = _favorites[document.path] ?? false;
-    final isBookmarked = _bookmarks[document.path] ?? false;
 
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => Container(
-        padding: EdgeInsets.fromLTRB(4.w, 4.w, 4.w, 8.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.open_in_new),
-              title: Text('Open'),
-              onTap: () => widget.onFileOpen(document),
-            ),
-            ListTile(
-              leading: Icon(
-                isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: isFavorite ? Colors.red : colorScheme.onSurface,
-              ),
-              title: Text(
-                isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
-              ),
-              onTap: () async {
-                Navigator.pop(context);
-                await _toggleFavorite(document);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isFavorite
-                          ? 'Removed from favorites'
-                          : 'Added to favorites',
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                color: isBookmarked
-                    ? colorScheme.primary
-                    : colorScheme.onSurface,
-              ),
-              title: Text(isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _toggleBookmark(document);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isBookmarked ? 'Bookmark removed' : 'Added to bookmarks',
-                    ),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.share),
-              title: Text('Share'),
-              onTap: () {
-                Navigator.pop(context);
-                _shareDocument(document);
-              },
-            ),
-            ListTile(
-              leading: Icon(
-                Icons.delete,
-                color: Theme.of(context).colorScheme.error,
-              ),
-              title: Text(
-                'Remove from recent',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              onTap: () async {
-                Navigator.pop(context);
-                await _deleteRecentFile(document);
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text('File deleted')));
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
   void _showDocumentOptions(DocumentFile doc) {
     final isFavorite = _favorites[doc.path] ?? false;
     final isBookmarked = _bookmarks[doc.path] ?? false;
+    final filePath = doc.path as String? ?? '';
+    final segments = filePath.split('/').where((s) => s.isNotEmpty).toList();
+    final lastSecondPath = segments.length >= 2 
+    ? '/${segments[segments.length - 2]}/${segments[segments.length - 1]}' 
+    : segments.length == 1
+        ? '/${segments[0]}'
+        : '';
+    if (segments.isNotEmpty) {
+      segments.removeLast();
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -460,7 +382,7 @@ class RecentScreenState extends State<RecentScreen> {
         ),
         padding: EdgeInsets.only(
           top: 2.h,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 2.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 7.h,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -489,10 +411,10 @@ class RecentScreenState extends State<RecentScreen> {
                       ).colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.picture_as_pdf_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 6.w,
+                    child: AssetIconWidget(
+                      iconName: 'logo',
+                      fileExtension: 'png',
+                      size: 5.w,
                     ),
                   ),
                   SizedBox(width: 3.w),
@@ -508,7 +430,7 @@ class RecentScreenState extends State<RecentScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          doc.path,
+                          lastSecondPath,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: Theme.of(
@@ -564,21 +486,43 @@ class RecentScreenState extends State<RecentScreen> {
                 // Implement details
               },
             ),
-            _buildBottomSheetOption(
-              context,
-              Icons.delete_outline_rounded,
-              'Remove from Recent',
-              () async {
+            GestureDetector(
+              onTap: () async{
                 Navigator.pop(context);
                 final shouldDelete = await _showDeleteModal(doc);
                 if (shouldDelete == true) {
                   await _deleteRecentFile(doc);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('File removed from recent')),
-                  );
+                  
                 }
               },
-              isDestructive: true,
+              child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10.w,
+                    height: 10.w,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.delete_rounded,
+                      color: Colors.red,
+                      size: 5.w,
+                    ),
+                  ),
+                  SizedBox(width: 3.w),
+                  Text(
+                    'Remove Recent',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
             ),
           ],
         ),

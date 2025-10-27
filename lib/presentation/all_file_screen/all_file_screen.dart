@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:pdfviewer/core/app_export.dart';
 import 'package:pdfviewer/models/document_file.dart';
+import 'package:pdfviewer/presentation/dashboard_screen/widgets/asset_icon_widget.dart';
 import 'package:pdfviewer/widgets/document_card_widget.dart';
 import 'package:pdfviewer/presentation/all_file_screen/widgets/empty_state_widget.dart';
 import 'package:pdfviewer/services/pdf_service.dart';
@@ -78,7 +79,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
     HapticFeedback.mediumImpact();
 
     // ← ADD THESE TWO LINES
-    print('AllFileScreen: Entering selection mode'); // Debug log
+    debugPrint('AllFileScreen: Entering selection mode'); // Debug log
     widget.onSelectionModeChanged.call(true); // Notify parent
   }
 
@@ -89,8 +90,8 @@ class _AllFileScreenState extends State<AllFileScreen> {
     });
 
     // ← ADD THESE TWO LINES
-    print('AllFileScreen: Exiting selection mode'); // Debug log
-    widget.onSelectionModeChanged?.call(false); // Notify parent
+    debugPrint('AllFileScreen: Exiting selection mode'); // Debug log
+    widget.onSelectionModeChanged.call(false); // Notify parent
   }
 
   void _toggleFileSelection(DocumentFile file) {
@@ -100,7 +101,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
         if (_selectedFiles.isEmpty) {
           _isSelectionMode = false;
           // ← ADD THESE TWO LINES
-          print(
+          debugPrint(
             'AllFileScreen: Auto-exiting selection mode (no files selected)',
           );
           widget.onSelectionModeChanged?.call(false); // Notify parent
@@ -116,9 +117,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
     // Store the count before showing dialog
     final count = _selectedFiles.length;
 
-    // Show dialog and wait for response
     final shouldDelete = await _showBulkDeleteModal(count);
-
     if (shouldDelete != true) return;
 
     int successCount = 0;
@@ -137,7 +136,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
           failCount++;
         }
       } catch (e) {
-        print('Error deleting file at $path: $e');
+        debugPrint('Error deleting file at $path: $e');
         failCount++;
       }
     }
@@ -151,7 +150,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
     });
 
     // Notify parent after deletion
-    widget.onSelectionModeChanged?.call(false);
+    widget.onSelectionModeChanged.call(false);
 
     // Show result message
     if (mounted) {
@@ -160,7 +159,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
           content: Text(
             '$successCount file(s) deleted successfully${failCount > 0 ? ', $failCount failed' : ''}',
           ),
-          backgroundColor: failCount > 0 ? Colors.orange : Colors.green,
+          backgroundColor: failCount > 0 ? Colors.orange : Colors.lightBlueAccent,
           duration: Duration(seconds: 2),
         ),
       );
@@ -240,7 +239,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
 
       widget.onSelectionModeChanged?.call(false);
     } catch (e) {
-      print('Error sharing files: $e');
+      debugPrint('Error sharing files: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -261,7 +260,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
           ? await FileService.getFreshFiles()
           : await FileService.scanForFiles();
 
-      print('FilesTab: Loaded ${files.length} files');
+      debugPrint('FilesTab: Loaded ${files.length} files');
 
       setState(() {
         _allFiles = files;
@@ -271,7 +270,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
       await _loadFavoritesAndBookmarks();
       _applyFiltersAndSort();
     } catch (e) {
-      print('Error loading files in FilesTab: $e');
+      debugPrint('Error loading files in FilesTab: $e');
       setState(() {
         _isLoading = false;
         _hasPermission = false;
@@ -394,6 +393,16 @@ class _AllFileScreenState extends State<AllFileScreen> {
   void _showDocumentOptions(DocumentFile doc) {
     final isFavorite = _favorites[doc.path] ?? false;
     final isBookmarked = _bookmarks[doc.path] ?? false;
+    final filePath = doc.path as String? ?? '';
+    final segments = filePath.split('/').where((s) => s.isNotEmpty).toList();
+    final lastSecondPath = segments.length >= 2 
+    ? '/${segments[segments.length - 2]}/${segments[segments.length - 1]}' 
+    : segments.length == 1
+        ? '/${segments[0]}'
+        : '';
+    if (segments.isNotEmpty) {
+      segments.removeLast();
+    }
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -405,7 +414,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
         ),
         padding: EdgeInsets.only(
           top: 2.h,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 2.h,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 7.h,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -434,10 +443,10 @@ class _AllFileScreenState extends State<AllFileScreen> {
                       ).colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Icon(
-                      Icons.picture_as_pdf_rounded,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 6.w,
+                    child: AssetIconWidget(
+                      iconName: 'logo',
+                      size: 5.w,
+                      fileExtension: 'png',
                     ),
                   ),
                   SizedBox(width: 3.w),
@@ -453,7 +462,7 @@ class _AllFileScreenState extends State<AllFileScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          doc.path,
+                          lastSecondPath,
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(
                                 color: Theme.of(
@@ -511,11 +520,8 @@ class _AllFileScreenState extends State<AllFileScreen> {
                 // Implement details
               },
             ),
-            _buildBottomSheetOption(
-              context,
-              Icons.delete_outline_rounded,
-              'Delete',
-              () async {
+            GestureDetector(
+              onTap: () async{
                 Navigator.pop(context);
                 final shouldDelete = await _showDeleteModal(doc);
                 if (shouldDelete == true) {
@@ -550,7 +556,34 @@ class _AllFileScreenState extends State<AllFileScreen> {
                   }
                 }
               },
-              isDestructive: true,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10.w,
+                      height: 10.w,
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: Colors.red,
+                        size: 5.w,
+                      ),
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      'Delete File',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.red,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             SizedBox(height: 1.h),
           ],

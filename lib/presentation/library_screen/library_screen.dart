@@ -70,71 +70,6 @@ class LibraryScreenState extends State<LibraryScreen> {
     }
   }
 
-  // Also notify when clearing:
-  Future<void> _clearFavorites() async {
-    final shouldClear = await _showClearConfirmationDialog('favorites');
-    if (shouldClear == true) {
-      try {
-        await StorageService.clearFavorites();
-        setState(() {
-          _favoritedDocuments = [];
-        });
-        widget.onLibraryCountsChanged?.call(0, _bookmarkedDocuments.length);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Favorites cleared'), behavior: SnackBarBehavior.floating),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to clear favorites'), behavior: SnackBarBehavior.floating),
-        );
-      }
-    }
-  }
-
-  Future<void> _clearBookmarks() async {
-    final shouldClear = await _showClearConfirmationDialog('bookmarks');
-    if (shouldClear == true) {
-      try {
-        await StorageService.clearBookmarks();
-        setState(() {
-          _bookmarkedDocuments = [];
-        });
-        widget.onLibraryCountsChanged?.call(_favoritedDocuments.length, 0);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Bookmarks cleared'), behavior: SnackBarBehavior.floating),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to clear bookmarks'), behavior: SnackBarBehavior.floating),
-        );
-      }
-    }
-  }
-
-  Future<bool?> _showClearConfirmationDialog(String type) {
-    return showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Clear $type?'),
-          content: Text('This action cannot be undone. All $type will be removed.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.primary,
-              ),
-              child: Text('Clear'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   Map<String, dynamic> _documentFileToMap(DocumentFile document) {
     return {
@@ -201,9 +136,6 @@ class LibraryScreenState extends State<LibraryScreen> {
   }
 
   Widget _buildTabBarWithActions(int favoriteCount, int bookmarkCount) {
-    final hasItems = _selectedTabIndex == 0 
-        ? _favoritedDocuments.isNotEmpty 
-        : _bookmarkedDocuments.isNotEmpty;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 3.w, vertical: 2.w),
@@ -289,76 +221,154 @@ class LibraryScreenState extends State<LibraryScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            ListTile(
-              leading: Icon(Icons.open_in_new),
-              title: Text('Open'),
+            GestureDetector(
               onTap: () {
                 Navigator.pop(context);
                 widget.onFileOpen(document);
               },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10.w,
+                      height: 10.w,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                      Icons.open_in_new,
+                      color: colorScheme.primary,
+                        size: 5.w,
+                      ),
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      'open',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),),
+                  ],
+                ),
+              ),
             ),
+            
             // Only show favorite toggle if not in favorites tab or if it's to add to favorites
             if (!isInFavoritesTab || !isFavorite)
-              ListTile(
-                leading: Icon(
-                  isFavorite ? Icons.favorite : Icons.favorite_border,
-                  color: isFavorite ? Colors.red : colorScheme.onSurface,
-                ),
-                title: Text(isFavorite ? 'Remove from Favorites' : 'Add to Favorites'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _toggleFavorite(document);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isFavorite
-                          ? 'Removed from favorites'
-                          : 'Added to favorites'),
-                      behavior: SnackBarBehavior.floating,
+            GestureDetector(
+              onTap: () async{
+                Navigator.pop(context);
+                await _toggleFavorite(document);
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10.w,
+                      height: 10.w,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isFavorite ? Icons.favorite : Icons.favorite_border,
+                      color: isFavorite ? Colors.red : colorScheme.onSurface,
+                        size: 5.w,
+                      ),
                     ),
-                  );
-                },
+                    SizedBox(width: 3.w),
+                    Text(
+                      isFavorite
+                          ? 'Removed from favorites'
+                          : 'Added to favorites',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),),
+                  ],
+                ),
               ),
+            ),
             // Only show bookmark toggle if not in bookmarks tab or if it's to add to bookmarks
             if (!isInBookmarksTab || !isBookmarked)
-              ListTile(
-                leading: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  color: isBookmarked
+            GestureDetector(
+              onTap: () async{
+                Navigator.pop(context);
+                await _toggleBookmark(document);
+              },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10.w,
+                      height: 10.w,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                      color: isBookmarked
                       ? colorScheme.primary
                       : colorScheme.onSurface,
-                ),
-                title: Text(isBookmarked ? 'Remove Bookmark' : 'Add Bookmark'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _toggleBookmark(document);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isBookmarked
-                          ? 'Bookmark removed'
-                          : 'Added to bookmarks'),
-                      behavior: SnackBarBehavior.floating,
+                        size: 5.w,
+                      ),
                     ),
-                  );
-                },
+                    SizedBox(width: 3.w),
+                    Text(
+                      isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),),
+                  ],
+                ),
               ),
-            ListTile(
-              leading: Icon(Icons.share),
-              title: Text('Share'),
-              onTap: () {
+            ),
+            GestureDetector(
+              onTap: () async{
                 Navigator.pop(context);
-                _shareDocument(document);
+                await _shareDocument(document);
               },
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10.w,
+                      height: 10.w,
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.delete_rounded,
+                        color: Colors.lightBlueAccent,
+                        size: 5.w,
+                      ),
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      'Share',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),),
+                  ],
+                ),
+              ),
             ),
             // Remove from current list (context-aware)
-            ListTile(
-              leading: Icon(
-                Icons.remove_circle_outline,
-                color: colorScheme.error,
-              ),
-              title: Text(isInFavoritesTab 
-                  ? 'Remove from Favorites' 
-                  : 'Remove from Bookmarks'),
-              onTap: () async {
+            GestureDetector(
+              onTap: () async{
                 Navigator.pop(context);
                 if (isInFavoritesTab) {
                   await _removeFromFavorites(document);
@@ -366,7 +376,36 @@ class LibraryScreenState extends State<LibraryScreen> {
                   await _removeFromBookmarks(document);
                 }
               },
+              child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.5.h),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10.w,
+                    height: 10.w,
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.delete_rounded,
+                      color: Colors.red,
+                      size: 5.w,
+                    ),
+                  ),
+                  SizedBox(width: 3.w),
+                  Text(isInFavoritesTab 
+                  ? 'Remove from Favorites' 
+                  : 'Remove from Bookmarks',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),),
+                ],
+              ),
             ),
+            ),
+            
           ],
         ),
       ),
@@ -547,4 +586,5 @@ class LibraryScreenState extends State<LibraryScreen> {
       ),
     );
   }
+
 }
